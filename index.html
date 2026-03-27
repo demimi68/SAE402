@@ -5,7 +5,146 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jeu SAE-402</title>
 </head>
+
+
+<style>
+  body {
+    background: #d7d7d7;
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+
+  #maze {
+    display: grid;
+  }
+
+  .cell {
+    width: 12px;
+    height: 12px;
+  }
+
+  .wall { background: black; }
+  .path { background: white; }
+
+  .player { background: red; }
+  .goal { background: gold; }
+</style>
+
 <body>
-    
+
+<div id="maze"></div>
+
+<script>
+const size = 41;
+
+let maze = Array.from({ length: size }, () =>
+  Array(size).fill(1)
+);
+
+// 🔹 DFS
+function carve(x, y) {
+  const dirs = [[2,0],[-2,0],[0,2],[0,-2]]
+    .sort(() => Math.random() - 0.5);
+
+  for (let [dx, dy] of dirs) {
+    let nx = x + dx;
+    let ny = y + dy;
+
+    if (
+      nx > 0 && nx < size-1 &&
+      ny > 0 && ny < size-1 &&
+      maze[ny][nx] === 1
+    ) {
+      maze[ny][nx] = 0;
+      maze[y + dy/2][x + dx/2] = 0;
+      carve(nx, ny);
+    }
+  }
+}
+
+// 🔹 Ajout de boucles SAFE
+function addConnections(p = 0.15) {
+  for (let y = 2; y < size-2; y++) {
+    for (let x = 2; x < size-2; x++) {
+
+      if (maze[y][x] === 1 && Math.random() < p) {
+
+        if (maze[y][x-1] === 0 && maze[y][x+1] === 0)
+          maze[y][x] = 0;
+
+        else if (maze[y-1][x] === 0 && maze[y+1][x] === 0)
+          maze[y][x] = 0;
+      }
+    }
+  }
+}
+
+// 🔹 Forcer accès au centre
+function openCenter() {
+  let c = Math.floor(size / 2);
+
+  maze[c][c] = 0;
+
+  // ouvrir autour pour être sûr que c’est accessible
+  maze[c+1][c] = 0;
+  maze[c-1][c] = 0;
+  maze[c][c+1] = 0;
+  maze[c][c-1] = 0;
+}
+
+// 🔹 Spawn joueur (4 coins)
+function getRandomSpawn() {
+  const positions = [
+    [1,1],
+    [1,size-2],
+    [size-2,1],
+    [size-2,size-2]
+  ];
+
+  return positions[Math.floor(Math.random()*4)];
+}
+
+// 🔹 génération
+maze[1][1] = 0;
+carve(1,1);
+addConnections(0.2);
+openCenter();
+
+let [playerX, playerY] = getRandomSpawn();
+maze[playerY][playerX] = 0;
+
+const goal = [Math.floor(size/2), Math.floor(size/2)];
+
+// 🔹 affichage
+const container = document.getElementById("maze");
+container.style.gridTemplateColumns = `repeat(${size}, 12px)`;
+
+function draw() {
+  container.innerHTML = "";
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+
+      const div = document.createElement("div");
+      div.className = "cell";
+
+      if (x === playerX && y === playerY)
+        div.classList.add("player");
+      else if (x === goal[0] && y === goal[1])
+        div.classList.add("goal");
+      else
+        div.classList.add(maze[y][x] ? "wall" : "path");
+
+      container.appendChild(div);
+    }
+  }
+}
+
+draw();
+</script>
+
+
+
 </body>
 </html>
