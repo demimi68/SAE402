@@ -1,157 +1,92 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Jeu SAE-402</title>
-
+<title>Labyrinthe</title>
 <style>
-body {
-    background: #d7d7d7;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-}
-
-#maze {
-    display: grid;
-}
-
-.wall { background: black; }
-.path { background: white; }
-.player { background: red; }
-.goal { background: gold; }
-
+body { margin: 0; }
+canvas { display: block; }
 </style>
 </head>
-
 <body>
 
-<div id="maze"></div>
+<canvas id="gameCanvas"></canvas>
 
 <script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
 
-// 🔥 moins de cases = plus grandes
-const size = 25;
+const COLS = 17;
+const ROWS = 23;
+let TILE_SIZE;
+let grid = [];
 
-// 🔥 taille écran
-const screenWidth = window.innerWidth;
-const screenHeight = window.innerHeight;
+// --- GÉNÉRATION DU LABYRINTHE ---
+function generateMaze(cols, rows) {
+    let maze = Array.from({ length: rows }, () => Array(cols).fill(1));
 
-// 🔥 calcul taille case
-const cellSize = Math.floor(
-    Math.min(screenWidth, screenHeight) / size
-);
+    function walk(r, c) {
+        maze[r][c] = 0;
+        const dirs = [[0,2],[0,-2],[2,0],[-2,0]].sort(() => Math.random()-0.5);
 
-let maze = Array.from({ length: size }, () =>
-    Array(size).fill(1)
-);
-
-// DFS
-function carve(x, y) {
-    const dirs = [[2,0],[-2,0],[0,2],[0,-2]]
-        .sort(() => Math.random() - 0.5);
-
-    for (let [dx, dy] of dirs) {
-        let nx = x + dx;
-        let ny = y + dy;
-
-        if (
-            nx > 0 && nx < size-1 &&
-            ny > 0 && ny < size-1 &&
-            maze[ny][nx] === 1
-        ) {
-            maze[ny][nx] = 0;
-            maze[y + dy/2][x + dx/2] = 0;
-            carve(nx, ny);
+        for (let [dr, dc] of dirs) {
+            let nr = r + dr, nc = c + dc;
+            if (nr > 0 && nr < rows && nc > 0 && nc < cols && maze[nr][nc] === 1) {
+                maze[r + dr/2][c + dc/2] = 0;
+                walk(nr, nc);
+            }
         }
     }
+
+    walk(1,1);
+
+    // casser des murs
+    for (let r = 1; r < rows-1; r++) {
+        for (let c = 1; c < cols-1; c++) {
+            if (maze[r][c] === 1 && Math.random() < 0.3) {
+                if ((maze[r][c-1] === 0 && maze[r][c+1] === 0) ||
+                    (maze[r-1][c] === 0 && maze[r+1][c] === 0)) {
+                    maze[r][c] = 0;
+                }
+            }
+        }
+    }
+
+    return maze;
 }
 
-// connexions
-function addConnections(p = 0.2) {
-    for (let y = 2; y < size-2; y++) {
-        for (let x = 2; x < size-2; x++) {
+function init(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-            if (maze[y][x] === 1 && Math.random() < p) {
+    TILE_SIZE = Math.min(canvas.width / COLS, canvas.height / ROWS);
+    grid = generateMaze(COLS, ROWS);
+}
 
-                if (maze[y][x-1] === 0 && maze[y][x+1] === 0)
-                    maze[y][x] = 0;
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-                else if (maze[y-1][x] === 0 && maze[y+1][x] === 0)
-                    maze[y][x] = 0;
+    for(let r=0; r<ROWS; r++){
+        for(let c=0; c<COLS; c++){
+            if(grid[r][c] === 1){
+                ctx.fillStyle = "#111";
+                ctx.fillRect(c*TILE_SIZE, r*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+            } else {
+                ctx.fillStyle = "#eee";
+                ctx.fillRect(c*TILE_SIZE, r*TILE_SIZE, TILE_SIZE, TILE_SIZE);
             }
         }
     }
 }
 
-// centre
-function openCenter() {
-    let c = Math.floor(size / 2);
-
-    maze[c][c] = 0;
-    maze[c+1][c] = 0;
-    maze[c-1][c] = 0;
-    maze[c][c+1] = 0;
-    maze[c][c-1] = 0;
+function loop(){
+    draw();
+    requestAnimationFrame(loop);
 }
 
-// spawn
-function getRandomSpawn() {
-    const positions = [
-        [1,1],
-        [1,size-2],
-        [size-2,1],
-        [size-2,size-2]
-    ];
-    return positions[Math.floor(Math.random()*4)];
-}
-
-// génération
-maze[1][1] = 0;
-carve(1,1);
-addConnections(0.2);
-openCenter();
-
-let [playerX, playerY] = getRandomSpawn();
-maze[playerY][playerX] = 0;
-
-const goal = [Math.floor(size/2), Math.floor(size/2)];
-
-const container = document.getElementById("maze");
-
-// affichage
-function draw() {
-    container.innerHTML = "";
-
-    container.style.gridTemplateColumns =
-        `repeat(${size}, ${cellSize}px)`;
-
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-
-            const div = document.createElement("div");
-
-            div.style.width = cellSize + "px";
-            div.style.height = cellSize + "px";
-
-            if (x === playerX && y === playerY)
-                div.className = "player";
-            else if (x === goal[0] && y === goal[1])
-                div.className = "goal";
-            else
-                div.className = maze[y][x] ? "wall" : "path";
-
-            container.appendChild(div);
-        }
-    }
-}
-
-draw();
-
+init();
+loop();
 </script>
 
 </body>

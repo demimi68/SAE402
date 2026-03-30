@@ -280,7 +280,11 @@ function draw() {
             tctx.fillStyle = gGrad; tctx.beginPath(); tctx.arc(g.x, g.y, dangerRadius, 0, 7); tctx.fill();
         }
     });
-    ctx.globalCompositeOperation = 'multiply'; ctx.drawImage(tCanvas, 0, 0); ctx.globalCompositeOperation = 'source-over';
+
+    // PERMET SOMBRE
+    // ctx.globalCompositeOperation = 'multiply'; 
+    // ctx.drawImage(tCanvas, 0, 0); 
+    ctx.globalCompositeOperation = 'source-over';
 }
 
 function loop() { update(); draw(); requestAnimationFrame(loop); }
