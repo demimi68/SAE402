@@ -5,88 +5,170 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Labyrinthe</title>
 <style>
-body { margin: 0; }
+body { margin: 0; overflow: hidden; }
 canvas { display: block; }
 </style>
 </head>
 <body>
 
-<canvas id="gameCanvas"></canvas>
+<canvas id="Canva-jeu"></canvas>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+// CANVAS
+const c = document.querySelector("#Canva-jeu");
+const ctx = c.getContext('2d');
 
-const COLS = 17;
-const ROWS = 23;
-let TILE_SIZE;
+let colonne = 17;
+let ligne = 23;
 let grid = [];
+let taille; // taille d'une case en pixels
 
-// --- GÉNÉRATION DU LABYRINTHE ---
-function generateMaze(cols, rows) {
-    let maze = Array.from({ length: rows }, () => Array(cols).fill(1));
+// --- SPRITE ---
+const playerImg = new Image();
+playerImg.src = "img/perso.png";
 
-    function walk(r, c) {
-        maze[r][c] = 0;
-        const dirs = [[0,2],[0,-2],[2,0],[-2,0]].sort(() => Math.random()-0.5);
+let SPRITE_W, SPRITE_H;
+playerImg.onload = () => {
+    SPRITE_W = playerImg.width / 4;
+    SPRITE_H = playerImg.height / 4;
+};
 
-        for (let [dr, dc] of dirs) {
-            let nr = r + dr, nc = c + dc;
-            if (nr > 0 && nr < rows && nc > 0 && nc < cols && maze[nr][nc] === 1) {
-                maze[r + dr/2][c + dc/2] = 0;
-                walk(nr, nc);
+// JOUEUR (en pixels maintenant)
+let player = {
+    x: 0, // à init plus tard
+    y: 0,
+    dir: 0,
+    frame: 0,
+    speed: 2 // pixels par frame
+};
+
+// CONTROLES
+let keys = {};
+window.addEventListener("keydown", e => keys[e.key] = true);
+window.addEventListener("keyup", e => keys[e.key] = false);
+
+// --- LABYRINTHE ---
+function generateLaby(col, lig) {
+    let laby = Array.from({ length: lig }, () => Array(col).fill(1));
+
+    function creuser(l, c) {
+        laby[l][c] = 0;
+
+        let dirs = [[0,2],[0,-2],[2,0],[-2,0]].sort(() => Math.random()-0.5);
+
+        for (let d of dirs) {
+            let nl = l + d[0];
+            let nc = c + d[1];
+
+            if (nl > 0 && nl < lig-1 && nc > 0 && nc < col-1 && laby[nl][nc] === 1) {
+                laby[l + d[0]/2][c + d[1]/2] = 0;
+                creuser(nl, nc);
             }
         }
     }
 
-    walk(1,1);
+    creuser(1,1);
+    return laby;
+}
 
-    // casser des murs
-    for (let r = 1; r < rows-1; r++) {
-        for (let c = 1; c < cols-1; c++) {
-            if (maze[r][c] === 1 && Math.random() < 0.3) {
-                if ((maze[r][c-1] === 0 && maze[r][c+1] === 0) ||
-                    (maze[r-1][c] === 0 && maze[r+1][c] === 0)) {
-                    maze[r][c] = 0;
-                }
-            }
+// INIT
+function init() {
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
+
+    grid = generateLaby(colonne, ligne);
+
+    taille = Math.min(c.width/colonne, c.height/ligne);
+
+    // spawn sûr (en pixels)
+    player.x = 1 * taille;
+    player.y = 1 * taille;
+}
+
+// COLLISION (en pixels)
+function peutBouger(x, y) {
+    let marge = 2; // pixels
+
+    let points = [
+        [x + marge, y + marge],
+        [x + taille - marge, y + marge],
+        [x + marge, y + taille - marge],
+        [x + taille - marge, y + taille - marge]
+    ];
+
+    for (let p of points) {
+        let col = Math.floor(p[0]/taille);
+        let lig = Math.floor(p[1]/taille);
+
+        if (!grid[lig] || grid[lig][col] === 1) {
+            return false;
         }
     }
 
-    return maze;
+    return true;
 }
 
-function init(){
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+// UPDATE
+function update() {
+    let moving = false;
 
-    TILE_SIZE = Math.min(canvas.width / COLS, canvas.height / ROWS);
-    grid = generateMaze(COLS, ROWS);
-}
+    let nx = player.x;
+    let ny = player.y;
 
-function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if (keys["ArrowLeft"]) { nx -= player.speed; player.dir = 1; moving = true; }
+    if (keys["ArrowRight"]) { nx += player.speed; player.dir = 2; moving = true; }
+    if (keys["ArrowUp"]) { ny -= player.speed; player.dir = 3; moving = true; }
+    if (keys["ArrowDown"]) { ny += player.speed; player.dir = 0; moving = true; }
 
-    for(let r=0; r<ROWS; r++){
-        for(let c=0; c<COLS; c++){
-            if(grid[r][c] === 1){
-                ctx.fillStyle = "#111";
-                ctx.fillRect(c*TILE_SIZE, r*TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            } else {
-                ctx.fillStyle = "#eee";
-                ctx.fillRect(c*TILE_SIZE, r*TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            }
-        }
+    // vérifier collisions
+    if (peutBouger(nx, player.y)) player.x = nx;
+    if (peutBouger(player.x, ny)) player.y = ny;
+
+    // animation
+    if (moving) {
+        player.frame += 0.15;
+        if (player.frame >= 4) player.frame = 0;
+    } else {
+        player.frame = 0;
     }
 }
 
-function loop(){
-    draw();
-    requestAnimationFrame(loop);
+// DRAW
+function afficher() {
+    ctx.clearRect(0,0,c.width,c.height);
+
+    // LABYRINTHE
+    for (let l = 0; l < ligne; l++) {
+        for (let col = 0; col < colonne; col++) {
+            ctx.fillStyle = grid[l][col] === 1 ? "#000" : "#eee";
+            ctx.fillRect(col*taille, l*taille, taille, taille);
+        }
+    }
+
+    // JOUEUR
+    if (SPRITE_W && SPRITE_H) {
+        let frameX = Math.floor(player.frame) * SPRITE_W;
+        let frameY = player.dir * SPRITE_H;
+
+        ctx.drawImage(
+            playerImg,
+            frameX, frameY, SPRITE_W, SPRITE_H,
+            player.x, player.y,
+            taille,
+            taille
+        );
+    }
+}
+
+// LOOP
+function boucle() {
+    update();
+    afficher();
+    requestAnimationFrame(boucle);
 }
 
 init();
-loop();
+boucle();
 </script>
 
 </body>
