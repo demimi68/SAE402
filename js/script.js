@@ -7,44 +7,70 @@ let ligne = 23;
 
 let grid = []
 
-// Fonction pour générer le labyrinthe 
+// --- Génération labyrinthe multi-chemins ---
 function generateLaby(col, lig) {
-    let laby = []
+    // Création du tableau du labyrinthe
+    let laby = [];
 
+    // Remplir toute la grille avec des murs (1 = mur)
     for (let l = 0; l < lig; l++) {
         laby[l] = [];
-
-        for (let c = 0; c < col; c++) {
-            laby[l][c] = 1;
-        }
+        for (let c = 0; c < col; c++) laby[l][c] = 1;
     }
 
-    // Permet de creuser le blanc donc faire les chemins
-    function creuser(l, c, laby, lig, col) {
-        laby[l][c] = 0
+    // Fonction pour creuser des chemins
+    function creuser(l, c) {
+        // On transforme la case actuelle en chemin (0 = vide)
+        laby[l][c] = 0;
 
+         // Liste des directions possibles (2 cases pour éviter les chemins collés)
         let directions = [
-            [0, 2],
-            [0, -2],
-            [2, 0],
-            [-2, 0]
-        ]
+            [0, 2], [0, -2], [2, 0], [-2, 0]
+        ];
 
+        // Mélanger les directions pour rendre le labyrinthe aléatoire
         directions.sort(() => Math.random() - 0.5);
 
+        // Parcourir chaque direction
         for (let d of directions) {
-            let nl = l + d[0]
-            let nc = c + d[1]
+            let nl = l + d[0];
+            let nc = c + d[1];
 
+            // Calcul de la prochaine case
             if (nl > 0 && nl < lig - 1 && nc > 0 && nc < col - 1) {
+                // Si la case est encore un mur
                 if (laby[nl][nc] === 1) {
-                    laby[l + d[0] / 2][c + d[1] / 2] = 0;
-                    creuser(nl, nc, laby, lig, col)
+                    // Casser le mur entre la case actuelle et la suivante
+                    laby[l + d[0]/2][c + d[1]/2] = 0;
+                    creuser(nl, nc);
                 }
             }
         }
     }
-    creuser(1, 1, laby, lig, col)
+    // Point de départ du labyrinthe
+    creuser(1, 1);
+
+    // Ajouter des chemins supplémentaires
+    let chance = 0.2;
+    
+    // Parcourir toutes les cases internes
+    for (let l = 1; l < lig-1; l++) {
+        for (let c = 1; c < col-1; c++) {
+            // Si c'est un mur
+            if (laby[l][c] === 1) {
+                let voisins = 0;
+
+                // Compter le nombre de chemins autour
+                if (laby[l+1][c] === 0) voisins++;
+                if (laby[l-1][c] === 0) voisins++;
+                if (laby[l][c+1] === 0) voisins++;
+                if (laby[l][c-1] === 0) voisins++;
+
+                // Si au moins 2 chemins autour → possibilité d'ouvrir
+                if (voisins >= 2 && Math.random() < chance) laby[l][c] = 0;
+            }
+        }
+    }
 
     return laby;
 }
