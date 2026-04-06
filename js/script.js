@@ -32,6 +32,9 @@ enemyImg.onload = () => {
 const decorImg = new Image();
 decorImg.src = "img/decor.jpg";
 
+const hatImg = new Image();
+hatImg.src = "img/chapeau.jpg";
+
 // Positions sur ton image (vignettes de 48x48 pixels)
 const SOURCE_HERBE = { x: 165, y: 25 };     // L'herbe pour les murs (Noir)
 
@@ -136,6 +139,8 @@ function getRandomPosition() {
     return { x, y };
 }
 
+let hatPos = { l: 0, c: 0 }; // Pour stocker la position du chapeau
+
 function init() {
     c.height = window.innerHeight;
     c.width = window.innerWidth;
@@ -143,6 +148,18 @@ function init() {
     grid = generateLaby(colonne, ligne)
 
     taille = Math.min(c.width / colonne, c.height / ligne);
+
+    // --- TROUVER LA CASE DE CHEMIN LA PLUS PROCHE DU BAS-DROITE ---
+    let trouve = false;
+    for (let l = ligne - 1; l >= 0 && !trouve; l--) {
+        for (let col = colonne - 1; col >= 0 && !trouve; col--) {
+            if (grid[l][col] === 0) {
+                hatPos.l = l;
+                hatPos.c = col;
+                trouve = true;
+            }
+        }
+    }
 
     // spawn sûr joueur
     player.x = 1 * taille;
@@ -155,7 +172,7 @@ function init() {
     // créer la liste des cases libres (0 = chemin)
     for (let l = 0; l < ligne; l++) {
         for (let c = 0; c < colonne; c++) {
-            if (grid[l][c] === 0 && !(l === 1 && c === 1)) { // pas sur le joueur
+            if (grid[l][c] === 0 && !(l === 1 && c === 1) && !(l === hatPos.l && c === hatPos.c)) {
                 available.push({l, c});
             }
         }
@@ -319,6 +336,17 @@ for (let l = 0; l < ligne; l++) {
     }
 
 }
+
+// --- DESSIN DU CHAPEAU SUR LE CHEMIN ---
+    if (hatImg.complete) {
+        ctx.drawImage(
+            hatImg, 
+            hatPos.c * taille, 
+            hatPos.l * taille, 
+            taille, 
+            taille
+        );
+    }
 
     // JOUEUR
     if (SPRITE_W && SPRITE_H) {
