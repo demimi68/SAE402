@@ -8,7 +8,7 @@ let ligne = 23;
 let grid = []
 let taille; // taille d'une case en pixels
 
-// --- SPRITE ---
+// --- Sprite du joueur ---
 const playerImg = new Image();
 playerImg.src = "img/perso.png";
 
@@ -16,6 +16,16 @@ let SPRITE_W, SPRITE_H;
 playerImg.onload = () => {
     SPRITE_W = playerImg.width / 4;
     SPRITE_H = playerImg.height / 4;
+};
+
+// --- Sprite ennemi ---
+const enemyImg = new Image();
+enemyImg.src = "img/mechant.png";
+
+let E_SPRITE_W, E_SPRITE_H;
+enemyImg.onload = () => {
+    E_SPRITE_W = 60; 
+    E_SPRITE_H = 60;
 };
 
 // JOUEUR (en pixels maintenant)
@@ -26,6 +36,9 @@ let player = {
     frame: 0,
     speed: 4 // pixels par frame
 };
+
+// --- ENNEMIS ---
+let enemies = [];
 
 // CONTROLES
 let keys = {};
@@ -100,18 +113,61 @@ function generateLaby(col, lig) {
     return laby;
 }
 
-// Fonction pour initialisation
+// --- POSITION ALEATOIRE SAFE ---
+function getRandomPosition() {
+    let x, y;
+
+    do {
+        let col = Math.floor(Math.random() * colonne);
+        let lig = Math.floor(Math.random() * ligne);
+
+        x = col * taille;
+        y = lig * taille;
+
+    } while (!peutBouger(x, y));
+
+    return { x, y };
+}
+
 function init() {
     c.height = window.innerHeight;
     c.width = window.innerWidth;
 
     grid = generateLaby(colonne, ligne)
 
-    taille = Math.min(c.width/colonne, c.height/ligne);
+    taille = Math.min(c.width / colonne, c.height / ligne);
 
-    // spawn sûr (en pixels)
+    // spawn sûr joueur
     player.x = 1 * taille;
     player.y = 1 * taille;
+
+    // spawn ennemis
+    enemies = [];
+    let available = [];
+
+    // créer la liste des cases libres (0 = chemin)
+    for (let l = 0; l < ligne; l++) {
+        for (let c = 0; c < colonne; c++) {
+            if (grid[l][c] === 0 && !(l === 1 && c === 1)) { // pas sur le joueur
+                available.push({l, c});
+            }
+        }
+    }
+
+    // tirer aléatoirement des cases sans répétition
+    let nbEnemies = 3;
+    for (let i = 0; i < nbEnemies; i++) {
+        let index = Math.floor(Math.random() * available.length);
+        let cell = available.splice(index, 1)[0]; // retire la case de la liste
+        enemies.push({
+            x: cell.c * taille,
+            y: cell.l * taille,
+            dir: 0,
+            frame: 0,
+            speed: 2,
+            moveTimer: 0
+        });
+    }
 }
 
 // COLLISION
@@ -162,6 +218,70 @@ function update() {
     }
 }
 
+// --- UPDATE ENNEMIS ---
+function updateEnemies() {
+    for (let e of enemies) {
+        // 1. Déterminer les directions réellement possibles
+        let possibles = [];
+        // On teste avec une petite marge pour être sûr qu'ils ne frôlent pas les murs
+        if (peutBouger(e.x, e.y - e.speed)) possibles.push(3); // Haut
+        if (peutBouger(e.x, e.y + e.speed)) possibles.push(0); // Bas
+        if (peutBouger(e.x - e.speed, e.y)) possibles.push(1); // Gauche
+        if (peutBouger(e.x + e.speed, e.y)) possibles.push(2); // Droite
+
+        // 2. Décision de changement de direction
+        let faceAuMur = !peutBouger(
+            e.dir === 1 ? e.x - e.speed : (e.dir === 2 ? e.x + e.speed : e.x),
+            e.dir === 3 ? e.y - e.speed : (e.dir === 0 ? e.y + e.speed : e.y)
+        );
+
+        // On change de direction si on tape un mur OU si on est pile sur une case (intersection)
+        let surUneCase = (Math.abs(e.x % taille) < e.speed && Math.abs(e.y % taille) < e.speed);
+
+        if (faceAuMur || (surUneCase && possibles.length > 2)) {
+            let nouvellesOptions = possibles;
+            
+            // Éviter le demi-tour si possible pour forcer l'exploration
+            if (possibles.length > 1) {
+                let inverse = {0:3, 3:0, 1:2, 2:1}[e.dir];
+                nouvellesOptions = possibles.filter(d => d !== inverse);
+            }
+
+            if (nouvellesOptions.length > 0) {
+                e.dir = nouvellesOptions[Math.floor(Math.random() * nouvellesOptions.length)];
+                
+                // Recalage magnétique : on aligne l'ennemi parfaitement sur la case
+                // pour éviter qu'il ne "glisse" hors du chemin petit à petit
+                if (surUneCase) {
+                    e.x = Math.round(e.x / taille) * taille;
+                    e.y = Math.round(e.y / taille) * taille;
+                }
+            }
+        }
+
+        // 3. Application du mouvement (uniquement si possible)
+        let nextX = e.x;
+        let nextY = e.y;
+        if (e.dir === 1) nextX -= e.speed;
+        if (e.dir === 2) nextX += e.speed;
+        if (e.dir === 3) nextY -= e.speed;
+        if (e.dir === 0) nextY += e.speed;
+
+        if (peutBouger(nextX, nextY)) {
+            e.x = nextX;
+            e.y = nextY;
+        } else {
+            // Sécurité ultime : si bloqué, on cherche une direction au pif immédiatement
+            e.dir = possibles[Math.floor(Math.random() * possibles.length)];
+        }
+
+        // Animation
+        e.frame += 0.1;
+        if (e.frame >= 4) e.frame = 0;
+    }
+}
+
+
 // Fonction pour afficher labyrinthe
 function afficher() {
     ctx.clearRect(0, 0, c.width, c.height)
@@ -193,10 +313,25 @@ function afficher() {
             taille
         );
     }
+
+    // ennemis
+    for (let e of enemies) {
+        if (E_SPRITE_W) {
+            ctx.drawImage(
+                enemyImg,
+                Math.floor(e.frame) * E_SPRITE_W,
+                e.dir * E_SPRITE_H,
+                E_SPRITE_W, E_SPRITE_H,
+                e.x, e.y,
+                taille, taille
+            );
+        }
+    }
 }
 
 function boucle() {
     update();
+    updateEnemies();
     afficher()
     requestAnimationFrame(boucle)
 }
