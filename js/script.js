@@ -28,6 +28,13 @@ enemyImg.onload = () => {
     E_SPRITE_H = 60;
 };
 
+// --- Sprite de décor ---
+const decorImg = new Image();
+decorImg.src = "img/decor.jpg";
+
+// Positions sur ton image (vignettes de 48x48 pixels)
+const SOURCE_HERBE = { x: 165, y: 25 };     // L'herbe pour les murs (Noir)
+
 // JOUEUR (en pixels maintenant)
 let player = {
     x: 0, // à init plus tard
@@ -287,18 +294,31 @@ function afficher() {
     ctx.clearRect(0, 0, c.width, c.height)
 
     // Labyrinthe
-    for (let l = 0; l < ligne; l++) {
-        for (let c = 0; c < colonne; c++) {
-            if (grid[l][c] === 1) {
-                ctx.fillStyle = "#000000"
+    // Dans la fonction afficher() :
+for (let l = 0; l < ligne; l++) {
+    for (let c = 0; c < colonne; c++) {
+        
+        if (grid[l][c] === 1) {
+            // --- C'EST UN MUR : On dessine l'herbe ---
+            if (decorImg.complete) {
+                ctx.drawImage(
+                    decorImg,
+                    SOURCE_HERBE.x, SOURCE_HERBE.y, 48, 48, 
+                    c * taille, l * taille, 
+                    taille, taille
+                );
+            } else {
+                ctx.fillStyle = "#000"; // Noir si l'image n'est pas chargée
+                ctx.fillRect(c * taille, l * taille, taille, taille);
             }
-            else {
-                ctx.fillStyle = "#eee"
-            }
-
-            ctx.fillRect(c * taille, l * taille, taille, taille)
+        } else {
+            // --- C'EST LE CHEMIN : On dessine un rectangle beige clair ---
+            ctx.fillStyle = "#F5F5DC";
+            ctx.fillRect(c * taille, l * taille, taille, taille);
         }
     }
+
+}
 
     // JOUEUR
     if (SPRITE_W && SPRITE_H) {
