@@ -33,7 +33,7 @@ const decorImg = new Image();
 decorImg.src = "img/decor.jpg";
 
 const hatImg = new Image();
-hatImg.src = "img/chapeau.jpg";
+hatImg.src = "img/chapeau.png";
 
 // Positions sur ton image (vignettes de 48x48 pixels)
 const SOURCE_HERBE = { x: 165, y: 25 };     // L'herbe pour les murs (Noir)
