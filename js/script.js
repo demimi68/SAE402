@@ -24,7 +24,7 @@ enemyImg.src = "img/mechant.png";
 
 let E_SPRITE_W, E_SPRITE_H;
 enemyImg.onload = () => {
-    E_SPRITE_W = 60; 
+    E_SPRITE_W = 60;
     E_SPRITE_H = 60;
 };
 
@@ -173,7 +173,7 @@ function init() {
     for (let l = 0; l < ligne; l++) {
         for (let c = 0; c < colonne; c++) {
             if (grid[l][c] === 0 && !(l === 1 && c === 1) && !(l === hatPos.l && c === hatPos.c)) {
-                available.push({l, c});
+                available.push({ l, c });
             }
         }
     }
@@ -206,8 +206,8 @@ function peutBouger(x, y) {
     ];
 
     for (let p of points) {
-        let col = Math.floor(p[0]/taille);
-        let lig = Math.floor(p[1]/taille);
+        let col = Math.floor(p[0] / taille);
+        let lig = Math.floor(p[1] / taille);
 
         if (!grid[lig] || grid[lig][col] === 1) {
             return false;
@@ -215,6 +215,15 @@ function peutBouger(x, y) {
     }
 
     return true;
+}
+
+function collisionRect(a, b) {
+    return (
+        a.x < b.x + taille &&
+        a.x + taille > b.x &&
+        a.y < b.y + taille &&
+        a.y + taille > b.y
+    );
 }
 
 // UPDATE
@@ -240,6 +249,27 @@ function update() {
     } else {
         player.frame = 0;
     }
+
+    // --- COLLISION AVEC ENNEMIS ---
+    for (let e of enemies) {
+        if (collisionRect(player, e)) {
+            alert("💀 Vous avez perdu !");
+            init(); // reset le jeu
+            return;
+        }
+    }
+
+    // --- COLLISION AVEC CHAPEAU ---
+    let hat = {
+        x: hatPos.c * taille,
+        y: hatPos.l * taille
+    };
+
+    if (collisionRect(player, hat)) {
+        alert("🎉 Vous avez gagné !");
+        init(); // reset le jeu
+        return;
+    }
 }
 
 // --- UPDATE ENNEMIS ---
@@ -264,16 +294,16 @@ function updateEnemies() {
 
         if (faceAuMur || (surUneCase && possibles.length > 2)) {
             let nouvellesOptions = possibles;
-            
+
             // Éviter le demi-tour si possible pour forcer l'exploration
             if (possibles.length > 1) {
-                let inverse = {0:3, 3:0, 1:2, 2:1}[e.dir];
+                let inverse = { 0: 3, 3: 0, 1: 2, 2: 1 }[e.dir];
                 nouvellesOptions = possibles.filter(d => d !== inverse);
             }
 
             if (nouvellesOptions.length > 0) {
                 e.dir = nouvellesOptions[Math.floor(Math.random() * nouvellesOptions.length)];
-                
+
                 // Recalage magnétique : on aligne l'ennemi parfaitement sur la case
                 // pour éviter qu'il ne "glisse" hors du chemin petit à petit
                 if (surUneCase) {
@@ -312,38 +342,38 @@ function afficher() {
 
     // Labyrinthe
     // Dans la fonction afficher() :
-for (let l = 0; l < ligne; l++) {
-    for (let c = 0; c < colonne; c++) {
-        
-        if (grid[l][c] === 1) {
-            // --- C'EST UN MUR : On dessine l'herbe ---
-            if (decorImg.complete) {
-                ctx.drawImage(
-                    decorImg,
-                    SOURCE_HERBE.x, SOURCE_HERBE.y, 48, 48, 
-                    c * taille, l * taille, 
-                    taille, taille
-                );
+    for (let l = 0; l < ligne; l++) {
+        for (let c = 0; c < colonne; c++) {
+
+            if (grid[l][c] === 1) {
+                // --- C'EST UN MUR : On dessine l'herbe ---
+                if (decorImg.complete) {
+                    ctx.drawImage(
+                        decorImg,
+                        SOURCE_HERBE.x, SOURCE_HERBE.y, 48, 48,
+                        c * taille, l * taille,
+                        taille, taille
+                    );
+                } else {
+                    ctx.fillStyle = "#000"; // Noir si l'image n'est pas chargée
+                    ctx.fillRect(c * taille, l * taille, taille, taille);
+                }
             } else {
-                ctx.fillStyle = "#000"; // Noir si l'image n'est pas chargée
+                // --- C'EST LE CHEMIN : On dessine un rectangle beige clair ---
+                ctx.fillStyle = "#F5F5DC";
                 ctx.fillRect(c * taille, l * taille, taille, taille);
             }
-        } else {
-            // --- C'EST LE CHEMIN : On dessine un rectangle beige clair ---
-            ctx.fillStyle = "#F5F5DC";
-            ctx.fillRect(c * taille, l * taille, taille, taille);
         }
+
     }
 
-}
-
-// --- DESSIN DU CHAPEAU SUR LE CHEMIN ---
+    // --- DESSIN DU CHAPEAU SUR LE CHEMIN ---
     if (hatImg.complete) {
         ctx.drawImage(
-            hatImg, 
-            hatPos.c * taille, 
-            hatPos.l * taille, 
-            taille, 
+            hatImg,
+            hatPos.c * taille,
+            hatPos.l * taille,
+            taille,
             taille
         );
     }
