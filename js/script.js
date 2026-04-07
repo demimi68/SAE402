@@ -2,6 +2,7 @@
 const c = document.querySelector("#Canva-jeu")
 const ctx = c.getContext('2d');
 
+let lastTime = 0;
 let colonne = 17;
 let ligne = 25;
 
@@ -44,7 +45,7 @@ let player = {
     y: 0,
     dir: 0,
     frame: 0,
-    speed: 4 // pixels par frame
+    speed: 2 // pixels par frame
 };
 
 // --- ENNEMIS ---
@@ -231,7 +232,7 @@ function init() {
             y: cell.l * taille,
             dir: 0,
             frame: 0,
-            speed: 2,
+            speed: 1,
             moveTimer: 0
         });
     }
@@ -270,18 +271,35 @@ function collisionRect(a, b) {
 }
 
 // UPDATE
-function update() {
+function update(delta) {
     let moving = false;
 
+    // coordonnées futures
     let nx = player.x;
     let ny = player.y;
 
-    if (keys["ArrowLeft"]) { nx -= player.speed; player.dir = 1; moving = true; }
-    if (keys["ArrowRight"]) { nx += player.speed; player.dir = 2; moving = true; }
-    if (keys["ArrowUp"]) { ny -= player.speed; player.dir = 3; moving = true; }
-    if (keys["ArrowDown"]) { ny += player.speed; player.dir = 0; moving = true; }
+    // clavier
+    if (keys["ArrowLeft"]) { nx -= player.speed * delta; player.dir = 1; moving = true; }
+    if (keys["ArrowRight"]) { nx += player.speed * delta; player.dir = 2; moving = true; }
+    if (keys["ArrowUp"]) { ny -= player.speed * delta; player.dir = 3; moving = true; }
+    if (keys["ArrowDown"]) { ny += player.speed * delta; player.dir = 0; moving = true; }
 
-    // vérifier collisions
+    // joystick
+    if (joystickActive || Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1) {
+        nx = player.x + joystickX * player.speed * delta;
+        ny = player.y + joystickY * player.speed * delta;
+
+        // dir pour l'animation
+        if (Math.abs(joystickX) > Math.abs(joystickY)) {
+            player.dir = joystickX > 0 ? 2 : 1; // droite ou gauche
+        } else {
+            player.dir = joystickY > 0 ? 0 : 3; // bas ou haut
+        }
+
+        moving = true;
+    }
+
+    // collisions
     if (peutBouger(nx, player.y)) player.x = nx;
     if (peutBouger(player.x, ny)) player.y = ny;
 
@@ -293,71 +311,51 @@ function update() {
         player.frame = 0;
     }
 
-    // --- COLLISION AVEC ENNEMIS ---
+    // collision ennemis
     for (let e of enemies) {
         if (collisionRect(player, e)) {
             alert("💀 Vous avez perdu !");
-            init(); // reset le jeu
+            init();
             return;
         }
     }
 
-    // --- COLLISION AVEC CHAPEAU ---
-    let hat = {
-        x: hatPos.c * taille,
-        y: hatPos.l * taille
-    };
-
+    // collision chapeau
+    let hat = { x: hatPos.c * taille, y: hatPos.l * taille };
     if (collisionRect(player, hat)) {
         alert("🎉 Vous avez gagné !");
-        init(); // reset le jeu
+        init();
         return;
-    }
-
-    if (joystickActive || Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1) {
-        let nx = player.x + joystickX * player.speed;
-        let ny = player.y + joystickY * player.speed;
-
-        if (peutBouger(nx, player.y)) player.x = nx;
-        if (peutBouger(player.x, ny)) player.y = ny;
-
-        // dir pour l'animation du sprite
-        if (Math.abs(joystickX) > Math.abs(joystickY)) {
-            player.dir = joystickX > 0 ? 2 : 1; // droite ou gauche
-        } else {
-            player.dir = joystickY > 0 ? 0 : 3; // bas ou haut
-        }
-
-        // animation
-        player.frame += 0.15;
-        if (player.frame >= 4) player.frame = 0;
     }
 }
 
 // --- UPDATE ENNEMIS ---
-function updateEnemies() {
+function updateEnemies(delta) {
     for (let e of enemies) {
-        // 1. Déterminer les directions réellement possibles
+        // 1️⃣ Déterminer les directions réellement possibles
         let possibles = [];
-        // On teste avec une petite marge pour être sûr qu'ils ne frôlent pas les murs
-        if (peutBouger(e.x, e.y - e.speed)) possibles.push(3); // Haut
-        if (peutBouger(e.x, e.y + e.speed)) possibles.push(0); // Bas
-        if (peutBouger(e.x - e.speed, e.y)) possibles.push(1); // Gauche
-        if (peutBouger(e.x + e.speed, e.y)) possibles.push(2); // Droite
+        if (peutBouger(e.x, e.y - e.speed * delta)) possibles.push(3); // Haut
+        if (peutBouger(e.x, e.y + e.speed * delta)) possibles.push(0); // Bas
+        if (peutBouger(e.x - e.speed * delta, e.y)) possibles.push(1); // Gauche
+        if (peutBouger(e.x + e.speed * delta, e.y)) possibles.push(2); // Droite
 
-        // 2. Décision de changement de direction
-        let faceAuMur = !peutBouger(
-            e.dir === 1 ? e.x - e.speed : (e.dir === 2 ? e.x + e.speed : e.x),
-            e.dir === 3 ? e.y - e.speed : (e.dir === 0 ? e.y + e.speed : e.y)
-        );
+        // 2️⃣ Détection face au mur (avec delta)
+        let nextX = e.x;
+        let nextY = e.y;
+        if (e.dir === 1) nextX -= e.speed * delta;
+        if (e.dir === 2) nextX += e.speed * delta;
+        if (e.dir === 3) nextY -= e.speed * delta;
+        if (e.dir === 0) nextY += e.speed * delta;
+        let faceAuMur = !peutBouger(nextX, nextY);
 
-        // On change de direction si on tape un mur OU si on est pile sur une case (intersection)
+        // 3️⃣ Vérifie si sur une case (intersection)
         let surUneCase = (Math.abs(e.x % taille) < e.speed && Math.abs(e.y % taille) < e.speed);
 
+        // 4️⃣ Changement de direction
         if (faceAuMur || (surUneCase && possibles.length > 2)) {
             let nouvellesOptions = possibles;
 
-            // Éviter le demi-tour si possible pour forcer l'exploration
+            // Éviter le demi-tour
             if (possibles.length > 1) {
                 let inverse = { 0: 3, 3: 0, 1: 2, 2: 1 }[e.dir];
                 nouvellesOptions = possibles.filter(d => d !== inverse);
@@ -366,8 +364,7 @@ function updateEnemies() {
             if (nouvellesOptions.length > 0) {
                 e.dir = nouvellesOptions[Math.floor(Math.random() * nouvellesOptions.length)];
 
-                // Recalage magnétique : on aligne l'ennemi parfaitement sur la case
-                // pour éviter qu'il ne "glisse" hors du chemin petit à petit
+                // Recalage magnétique
                 if (surUneCase) {
                     e.x = Math.round(e.x / taille) * taille;
                     e.y = Math.round(e.y / taille) * taille;
@@ -375,23 +372,16 @@ function updateEnemies() {
             }
         }
 
-        // 3. Application du mouvement (uniquement si possible)
-        let nextX = e.x;
-        let nextY = e.y;
-        if (e.dir === 1) nextX -= e.speed;
-        if (e.dir === 2) nextX += e.speed;
-        if (e.dir === 3) nextY -= e.speed;
-        if (e.dir === 0) nextY += e.speed;
-
+        // 5️⃣ Application du mouvement
         if (peutBouger(nextX, nextY)) {
             e.x = nextX;
             e.y = nextY;
-        } else {
-            // Sécurité ultime : si bloqué, on cherche une direction au pif immédiatement
+        } else if (possibles.length > 0) {
+            // Si bloqué, change de direction immédiatement
             e.dir = possibles[Math.floor(Math.random() * possibles.length)];
         }
 
-        // Animation
+        // 6️⃣ Animation
         e.frame += 0.1;
         if (e.frame >= 4) e.frame = 0;
     }
@@ -469,12 +459,16 @@ function afficher() {
     }
 }
 
-function boucle() {
-    update();
-    updateEnemies();
-    afficher()
-    requestAnimationFrame(boucle)
+function boucle(timestamp) {
+    let delta = (timestamp - lastTime) / 16.666; // normalise à 60FPS
+    lastTime = timestamp;
+
+    update(delta);
+    updateEnemies(delta);
+    afficher();
+
+    requestAnimationFrame(boucle);
 }
 
-init()
-boucle()
+init();
+requestAnimationFrame(boucle);
