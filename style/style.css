@@ -9,11 +9,11 @@ canvas {
 
 #joystick {
     position: fixed;
-    bottom: 20px;         /* distance du bas */
+    bottom: 40px;         /* distance du bas */
     left: 50%;            /* centré horizontal */
     transform: translateX(-50%); /* pour le centrer */
-    width: 80px;          /* plus petit que avant */
-    height: 80px;
+    width: 60px;          /* plus petit que avant */
+    height: 60px;
     background: rgba(0,0,0,0.3);
     border-radius: 50%;
     touch-action: none;   /* éviter le scroll quand on touche */
@@ -22,10 +22,10 @@ canvas {
 
 #stick {
     position: absolute;
-    width: 40px;          /* moitié du pad */
-    height: 40px;
+    width: 30px;          /* moitié du pad */
+    height: 30px;
     background: rgba(255,255,255,0.6);
     border-radius: 50%;
-    top: 20px;            /* centré dans le pad */
-    left: 20px;
+    top: 15px;            /* centré dans le pad */
+    left: 15px;
 }
