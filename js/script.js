@@ -2,6 +2,30 @@
 const c = document.querySelector("#Canva-jeu")
 const ctx = c.getContext('2d');
 
+let gameState = "menu"; // menu, playing, win, lose
+
+const overlay = document.getElementById("overlay");
+const menu = document.getElementById("menu");
+const endScreen = document.getElementById("endScreen");
+const endMessage = document.getElementById("endMessage");
+const startBtn = document.getElementById("startBtn");
+const restartBtn = document.getElementById("restartBtn");
+
+startBtn.addEventListener("click", () => {
+    menu.style.display = "none";
+    overlay.style.display = "none";
+    gameState = "playing";
+    init();
+});
+
+restartBtn.addEventListener("click", () => {
+    endScreen.style.display = "none";
+    overlay.style.display = "none";
+    gameState = "playing";
+    init();
+});
+
+
 let lastTime = 0;
 let colonne = 17;
 let ligne = 25;
@@ -272,6 +296,8 @@ function collisionRect(a, b) {
 
 // UPDATE
 function update(delta) {
+    if (gameState !== "playing") return; // ⬅️ On ne bouge rien si overlay visible
+
     let moving = false;
 
     // coordonnées futures
@@ -287,13 +313,12 @@ function update(delta) {
     // joystick
     if (joystickActive || Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1) {
         nx = player.x + joystickX * player.speed * delta;
-        ny = player.y + joystickY * player.speed * delta;
+        ny = player.y + joystickY * delta;
 
-        // dir pour l'animation
         if (Math.abs(joystickX) > Math.abs(joystickY)) {
-            player.dir = joystickX > 0 ? 2 : 1; // droite ou gauche
+            player.dir = joystickX > 0 ? 2 : 1;
         } else {
-            player.dir = joystickY > 0 ? 0 : 3; // bas ou haut
+            player.dir = joystickY > 0 ? 0 : 3;
         }
 
         moving = true;
@@ -314,8 +339,10 @@ function update(delta) {
     // collision ennemis
     for (let e of enemies) {
         if (collisionRect(player, e)) {
-            alert("💀 Vous avez perdu !");
-            init();
+            gameState = "lose";
+            overlay.style.display = "flex";
+            endScreen.style.display = "block";
+            endMessage.textContent = "Vous avez perdu !";
             return;
         }
     }
@@ -323,14 +350,17 @@ function update(delta) {
     // collision chapeau
     let hat = { x: hatPos.c * taille, y: hatPos.l * taille };
     if (collisionRect(player, hat)) {
-        alert("🎉 Vous avez gagné !");
-        init();
+        gameState = "win";
+        overlay.style.display = "flex";
+        endScreen.style.display = "block";
+        endMessage.textContent = "Vous avez gagné !";
         return;
     }
 }
 
 // --- UPDATE ENNEMIS ---
 function updateEnemies(delta) {
+    if (gameState !== "playing") return; // ⬅️ On ne bouge pas les ennemis si overlay visible
     for (let e of enemies) {
         // 1️⃣ Déterminer les directions réellement possibles
         let possibles = [];
@@ -460,12 +490,12 @@ function afficher() {
 }
 
 function boucle(timestamp) {
-    let delta = (timestamp - lastTime) / 16.666; // normalise à 60FPS
+    let delta = (timestamp - lastTime) / 16.666;
     lastTime = timestamp;
 
     update(delta);
     updateEnemies(delta);
-    afficher();
+    afficher(); // ⬅️ Toujours afficher, même si overlay visible
 
     requestAnimationFrame(boucle);
 }

@@ -6,9 +6,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAE402</title>
     <link rel="stylesheet" href="style/style.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cairo:wght@200..1000&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Jersey+10&family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap"
+        rel="stylesheet">
+
 </head>
 
 <body>
+
+    <div id="overlay"
+        style="display:flex; justify-content:center; align-items:center; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10; flex-direction:column;">
+        <div id="menu">
+            <h1>Labyrinthe</h1>
+            <p>Règles : Attrape le chapeau et évite les ennemis !</p>
+            <button id="startBtn">Lancer le jeu</button>
+        </div>
+
+        <div id="endScreen" style="display:none; text-align:center; color:#fff;">
+            <h1 id="endMessage"></h1>
+            <button id="restartBtn">Rejouer</button>
+        </div>
+    </div>
+
 
     <canvas id="Canva-jeu"></canvas>
 
