@@ -3,7 +3,7 @@ const c = document.querySelector("#Canva-jeu")
 const ctx = c.getContext('2d');
 
 let colonne = 17;
-let ligne = 23;
+let ligne = 25;
 
 let grid = []
 let taille; // taille d'une case en pixels
@@ -54,6 +54,49 @@ let enemies = [];
 let keys = {};
 window.addEventListener("keydown", e => keys[e.key] = true);
 window.addEventListener("keyup", e => keys[e.key] = false);
+
+const joystick = document.getElementById("joystick");
+const stick = document.getElementById("stick");
+
+let joystickActive = false;
+let joystickX = 0;
+let joystickY = 0;
+let maxRadius = 50; // rayon max du stick
+
+function updateJoystick(dx, dy) {
+    // limite le stick à maxRadius
+    let dist = Math.hypot(dx, dy);
+    if (dist > maxRadius) {
+        dx = (dx / dist) * maxRadius;
+        dy = (dy / dist) * maxRadius;
+    }
+    stick.style.left = `${30 + dx}px`;
+    stick.style.top = `${30 + dy}px`;
+
+    // normaliser pour movement
+    joystickX = dx / maxRadius;
+    joystickY = dy / maxRadius;
+}
+
+// événements tactiles
+joystick.addEventListener("touchstart", e => {
+    e.preventDefault();
+    joystickActive = true;
+});
+
+joystick.addEventListener("touchmove", e => {
+    if (!joystickActive) return;
+    let rect = joystick.getBoundingClientRect();
+    let touch = e.touches[0];
+    let dx = touch.clientX - (rect.left + rect.width / 2);
+    let dy = touch.clientY - (rect.top + rect.height / 2);
+    updateJoystick(dx, dy);
+});
+
+joystick.addEventListener("touchend", e => {
+    joystickActive = false;
+    updateJoystick(0, 0); // recentre le stick
+});
 
 // --- Génération labyrinthe multi-chemins ---
 function generateLaby(col, lig) {
@@ -269,6 +312,25 @@ function update() {
         alert("🎉 Vous avez gagné !");
         init(); // reset le jeu
         return;
+    }
+
+    if (joystickActive || Math.abs(joystickX) > 0.1 || Math.abs(joystickY) > 0.1) {
+        let nx = player.x + joystickX * player.speed;
+        let ny = player.y + joystickY * player.speed;
+
+        if (peutBouger(nx, player.y)) player.x = nx;
+        if (peutBouger(player.x, ny)) player.y = ny;
+
+        // dir pour l'animation du sprite
+        if (Math.abs(joystickX) > Math.abs(joystickY)) {
+            player.dir = joystickX > 0 ? 2 : 1; // droite ou gauche
+        } else {
+            player.dir = joystickY > 0 ? 0 : 3; // bas ou haut
+        }
+
+        // animation
+        player.frame += 0.15;
+        if (player.frame >= 4) player.frame = 0;
     }
 }
 
