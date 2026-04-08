@@ -32,6 +32,7 @@ let ligne = 25;
 
 let grid = []
 let taille; // taille d'une case en pixels
+let rayonVision = 150;
 
 // --- Sprite du joueur ---
 const playerImg = new Image();
@@ -486,6 +487,27 @@ function afficher() {
                 taille, taille
             );
         }
+    }
+
+    // --- 3. AJOUT DU MODE NOIR (À insérer ici) ---
+    // On ne l'affiche que si on est en train de jouer
+    if (gameState === "playing") {
+        ctx.save();
+        
+        // Calcul du centre du joueur (puisqu'il bouge en pixels ici)
+        let xLumiere = player.x + taille / 2;
+        let yLumiere = player.y + taille / 2;
+
+        // On dessine le noir
+        ctx.fillStyle = "black";
+        
+        // Technique du "rect inverse" pour percer le trou
+        ctx.beginPath();
+        ctx.rect(0, 0, c.width, c.height);
+        ctx.arc(xLumiere, yLumiere, rayonVision, 0, Math.PI * 2, true);
+        ctx.fill();
+
+        ctx.restore();
     }
 }
 
