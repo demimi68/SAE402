@@ -16,32 +16,47 @@
 </head>
 
 <body>
-
+    <!-- Overlay -->
     <div id="overlay"
         style="display:flex; justify-content:center; align-items:center; position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10; flex-direction:column;">
+
+        <!-- ===== MENU DE DEBUT ===== -->
         <div id="menu">
             <h1>Labyrinthe</h1>
+
+            <!-- Règles du jeu -->
             <p>Règles : Attrape le chapeau et évite les ennemis !</p>
+
+            <!-- Bouton pour démarrer le jeu -->
             <button id="startBtn">Lancer le jeu</button>
         </div>
 
+        <!-- ===== ECRAN DE FIN ===== -->
         <div id="endScreen" style="display:none; text-align:center; color:#fff;">
+
+            <!-- Message (gagné / perdu) -->
             <h1 id="endMessage"></h1>
+
+            <!-- Bouton rejouer -->
             <button id="restartBtn">Rejouer</button>
+
+            <!-- Bouton continuer -->
             <a id="continueBtn" href="#" style="display:none; text-decoration:none;">
                 <button>Continuer</button>
             </a>
         </div>
     </div>
 
-
+    <!-- Zone où le jeu est dessiné -->
     <canvas id="Canva-jeu"></canvas>
 
+    <!-- Zone tactile -->
     <div id="joystick">
         <div id="stick"></div>
     </div>
 
 
+    <!-- SCRIPT JS -->
     <script src="js/script.js"></script>
 </body>
 
