@@ -32,7 +32,7 @@ let ligne = 25;
 
 let grid = []
 let taille; // taille d'une case en pixels
-let rayonVision = 150;
+let rayonVision = 50;
 
 // --- Sprite du joueur ---
 const playerImg = new Image();
