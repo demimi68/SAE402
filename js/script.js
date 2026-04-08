@@ -221,11 +221,20 @@ function getRandomPosition() {
 let hatPos = { l: 0, c: 0 }; // Pour stocker la position du chapeau
 
 function init() {
-    c.height = window.innerHeight;
-    c.width = window.innerWidth;
+    // On réutilise la détection mobile qu'on a créée avant
+    const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
-    grid = generateLaby(colonne, ligne)
+    if (isMobile) {
+        // Sur mobile : On prend tout l'écran
+        c.width = window.innerWidth;
+        c.height = window.innerHeight;
+    } else {
+        // Sur ordi : On fixe une taille "boîte" (ex: format portrait type GameBoy)
+        c.width = 600; 
+        c.height = 800; 
+    }
 
+    grid = generateLaby(colonne, ligne);
     taille = Math.min(c.width / colonne, c.height / ligne);
 
     // --- TROUVER LA CASE DE CHEMIN LA PLUS PROCHE DU BAS-DROITE ---

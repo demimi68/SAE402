@@ -1,4 +1,3 @@
-
 /* ===== Reset & canvas ===== */
 body {
     margin: 0;
@@ -6,11 +5,17 @@ body {
     font-family: 'Press Start 2P', cursive;
     color: #fff;
     background-color: #000;
+    
+    /* AJOUTS POUR CENTRER */
+    display: flex;
+    justify-content: center; /* Centre horizontalement */
+    align-items: center;     /* Centre verticalement */
+    height: 100vh;           /* Prend toute la hauteur de l'écran */
+    width: 100vw;            /* Prend toute la largeur de l'écran */
 }
 
 canvas {
     display: block;
-    justify-content: center;
 }
 
 /* ===== Overlay pour menu et écran de fin ===== */
