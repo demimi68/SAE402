@@ -17,7 +17,7 @@ const continueBtn = document.getElementById("continueBtn");
 // Musique
 const bgMusic = new Audio("musique/musique.mp3");
 bgMusic.loop = true; // La musique recommence à la fin
-bgMusic.volume = 0.3; // Volume à 30%
+bgMusic.volume = 0.2; // Volume à 20%
 
 // Détection si l'utilisateur est sur mobile
 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
