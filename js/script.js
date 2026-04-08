@@ -56,7 +56,7 @@ let ligne = 25;
 
 let grid = []
 let taille;
-let rayonVision = 50;
+let rayonVision = 70;
 
 
 // SPRITE JOUEUR
