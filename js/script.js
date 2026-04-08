@@ -2,8 +2,10 @@
 const c = document.querySelector("#Canva-jeu")
 const ctx = c.getContext('2d');
 
-let gameState = "menu"; // menu, playing, win, lose
+// Etat du jeu (menu, en cours, gagné, perdu)
+let gameState = "menu"; 
 
+// Récupération des éléments HTML (menus, boutons, overlay)
 const overlay = document.getElementById("overlay");
 const menu = document.getElementById("menu");
 const endScreen = document.getElementById("endScreen");
@@ -12,17 +14,20 @@ const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
 const continueBtn = document.getElementById("continueBtn");
 
-// Détecte si l'appareil est tactile (smartphone/tablette)
+// Détection si l'utilisateur est sur mobile
 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
+// BOUTONS MENU
+// Bouton "Jouer"
 startBtn.addEventListener("click", () => {
     menu.style.display = "none";
     overlay.style.display = "none";
-    if (isMobile) joystick.style.display = "block";
+    if (isMobile) joystick.style.display = "block"; // Affiche joystick mobile
     gameState = "playing";
-    init();
+    init(); // Lance une nouvelle partie
 });
 
+// Bouton "Rejouer"
 restartBtn.addEventListener("click", () => {
     endScreen.style.display = "none";
     overlay.style.display = "none";
@@ -31,87 +36,99 @@ restartBtn.addEventListener("click", () => {
     init();
 });
 
-
+// VARIABLES GLOBALES
 let lastTime = 0;
 let colonne = 17;
 let ligne = 25;
 
 let grid = []
-let taille; // taille d'une case en pixels
+let taille;
 let rayonVision = 50;
 
-// --- Sprite du joueur ---
+
+// SPRITE JOUEUR
 const playerImg = new Image();
 playerImg.src = "img/perso.png";
 
 let SPRITE_W, SPRITE_H;
+
+// Découpe du sprite en 4x4 animations
 playerImg.onload = () => {
     SPRITE_W = playerImg.width / 4;
     SPRITE_H = playerImg.height / 4;
 };
 
-// --- Sprite ennemi ---
+
+// SPRITE ENNEMI
 const enemyImg = new Image();
 enemyImg.src = "img/mechant.png";
 
 let E_SPRITE_W, E_SPRITE_H;
+
+// Taille fixe pour ennemi
 enemyImg.onload = () => {
     E_SPRITE_W = 60;
     E_SPRITE_H = 60;
 };
 
-// --- Sprite de décor ---
+
+// DECOR
 const decorImg = new Image();
 decorImg.src = "img/decor.jpg";
 
 const hatImg = new Image();
 hatImg.src = "img/chapeau.png";
 
-// Positions sur ton image (vignettes de 48x48 pixels)
-const SOURCE_HERBE = { x: 165, y: 25 };     // L'herbe pour les murs (Noir)
+// Position de la texture herbe dans l'image
+const SOURCE_HERBE = { x: 165, y: 25 };
 
-// JOUEUR (en pixels maintenant)
+
+// JOUEUR
 let player = {
-    x: 0, // à init plus tard
+    x: 0,
     y: 0,
     dir: 0,
     frame: 0,
-    speed: 2 // pixels par frame
+    speed: 2 
 };
 
-// --- ENNEMIS ---
+
+// ENNEMIS
 let enemies = [];
 
-// CONTROLES
+// CONTROLES CLAVIER
 let keys = {};
 window.addEventListener("keydown", e => keys[e.key] = true);
 window.addEventListener("keyup", e => keys[e.key] = false);
 
+// JOYSTICK MOBILE
 const joystick = document.getElementById("joystick");
 const stick = document.getElementById("stick");
 
 let joystickActive = false;
 let joystickX = 0;
 let joystickY = 0;
-let maxRadius = 50; // rayon max du stick
+let maxRadius = 50;
 
+// Mise à jour du joystick
 function updateJoystick(dx, dy) {
     let dist = Math.hypot(dx, dy);
+    // Limite le mouvement dans un cercle
     if (dist > maxRadius) {
         dx = (dx / dist) * maxRadius;
         dy = (dy / dist) * maxRadius;
     }
 
-    // Utilise 50% (le centre) + le décalage dx/dy
-    // On divise par le rayon pour que le mouvement soit proportionnel
+    // Déplace le stick visuellement
     stick.style.left = `calc(50% + ${dx}px)`;
     stick.style.top = `calc(50% + ${dy}px)`;
 
+    // Valeurs normalisées (-1 à 1)
     joystickX = dx / maxRadius;
     joystickY = dy / maxRadius;
 }
 
-// événements tactiles
+// Gestion tactile
 joystick.addEventListener("touchstart", e => {
     e.preventDefault();
     joystickActive = true;
@@ -128,27 +145,25 @@ joystick.addEventListener("touchmove", e => {
 
 joystick.addEventListener("touchend", e => {
     joystickActive = false;
-    updateJoystick(0, 0); // Recentrer le stick visuellement
+    updateJoystick(0, 0);
 
-    // IMPORTANT : Forcer l'arrêt du mouvement
     joystickX = 0;
     joystickY = 0;
 });
 
-// --- Génération labyrinthe multi-chemins ---
+// GENERATION LABYRINTHE
 function generateLaby(col, lig) {
     // Création du tableau du labyrinthe
     let laby = [];
 
-    // Remplir toute la grille avec des murs (1 = mur)
+    // Remplit tout en murs
     for (let l = 0; l < lig; l++) {
         laby[l] = [];
         for (let c = 0; c < col; c++) laby[l][c] = 1;
     }
 
-    // Fonction pour creuser des chemins
+    // Fonction récursive pour creuser
     function creuser(l, c) {
-        // On transforme la case actuelle en chemin (0 = vide)
         laby[l][c] = 0;
 
         // Liste des directions possibles (2 cases pour éviter les chemins collés)
@@ -175,10 +190,9 @@ function generateLaby(col, lig) {
             }
         }
     }
-    // Point de départ du labyrinthe
     creuser(1, 1);
 
-    // Ajouter des chemins supplémentaires
+    // Ajoute des passages en plus
     let chance = 0.2;
 
     // Parcourir toutes les cases internes
@@ -203,42 +217,25 @@ function generateLaby(col, lig) {
     return laby;
 }
 
-// --- POSITION ALEATOIRE SAFE ---
-function getRandomPosition() {
-    let x, y;
-
-    do {
-        let col = Math.floor(Math.random() * colonne);
-        let lig = Math.floor(Math.random() * ligne);
-
-        x = col * taille;
-        y = lig * taille;
-
-    } while (!peutBouger(x, y));
-
-    return { x, y };
-}
-
 let hatPos = { l: 0, c: 0 }; // Pour stocker la position du chapeau
 
+// INITIALISATION PARTIE
 function init() {
-    // On réutilise la détection mobile qu'on a créée avant
-    const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-
     if (isMobile) {
         // Sur mobile : On prend tout l'écran
         c.width = window.innerWidth;
         c.height = window.innerHeight;
     } else {
-        // Sur ordi : On fixe une taille "boîte" (ex: format portrait type GameBoy)
+        // Sur ordi : On fixe une taille "boîte"
         c.width = 600;
         c.height = 800;
     }
 
+    // Génération labyrinthe
     grid = generateLaby(colonne, ligne);
     taille = Math.min(c.width / colonne, c.height / ligne);
 
-    // --- TROUVER LA CASE DE CHEMIN LA PLUS PROCHE DU BAS-DROITE ---
+    // Position du chapeau (objectif)
     let trouve = false;
     for (let l = ligne - 1; l >= 0 && !trouve; l--) {
         for (let col = colonne - 1; col >= 0 && !trouve; col--) {
@@ -250,15 +247,14 @@ function init() {
         }
     }
 
-    // spawn sûr joueur
+    // Spawn joueur
     player.x = 1 * taille;
     player.y = 1 * taille;
 
-    // spawn ennemis
+    // Spawn ennemis sans chevauchement
     enemies = [];
     let available = [];
 
-    // créer la liste des cases libres (0 = chemin)
     for (let l = 0; l < ligne; l++) {
         for (let c = 0; c < colonne; c++) {
             if (grid[l][c] === 0 && !(l === 1 && c === 1) && !(l === hatPos.l && c === hatPos.c)) {
@@ -267,11 +263,10 @@ function init() {
         }
     }
 
-    // tirer aléatoirement des cases sans répétition
     let nbEnemies = 4;
     for (let i = 0; i < nbEnemies; i++) {
         let index = Math.floor(Math.random() * available.length);
-        let cell = available.splice(index, 1)[0]; // retire la case de la liste
+        let cell = available.splice(index, 1)[0];
         enemies.push({
             x: cell.c * taille,
             y: cell.l * taille,
@@ -284,8 +279,9 @@ function init() {
 }
 
 // COLLISION
+// Vérifie si on peut marcher
 function peutBouger(x, y) {
-    let marge = 2; // pixels
+    let marge = 2;
 
     let points = [
         [x + marge, y + marge],
@@ -306,6 +302,7 @@ function peutBouger(x, y) {
     return true;
 }
 
+// Collision rectangle (joueur / ennemi)
 function collisionRect(a, b) {
     return (
         a.x < b.x + taille &&
@@ -317,7 +314,7 @@ function collisionRect(a, b) {
 
 // UPDATE
 function update(delta) {
-    if (gameState !== "playing") return; // ⬅️ On ne bouge rien si overlay visible
+    if (gameState !== "playing") return; // si overlay visible : le jeu est fixe en arrière plan
 
     let moving = false;
 
@@ -387,18 +384,18 @@ function update(delta) {
     }
 }
 
-// --- UPDATE ENNEMIS ---
+// UPDATE ENNEMIS
 function updateEnemies(delta) {
-    if (gameState !== "playing") return; // ⬅️ On ne bouge pas les ennemis si overlay visible
+    if (gameState !== "playing") return; // On ne bouge pas les ennemis si overlay visible
     for (let e of enemies) {
-        // 1️⃣ Déterminer les directions réellement possibles
+        // Déterminer les directions réellement possibles
         let possibles = [];
-        if (peutBouger(e.x, e.y - e.speed * delta)) possibles.push(3); // Haut
-        if (peutBouger(e.x, e.y + e.speed * delta)) possibles.push(0); // Bas
-        if (peutBouger(e.x - e.speed * delta, e.y)) possibles.push(1); // Gauche
-        if (peutBouger(e.x + e.speed * delta, e.y)) possibles.push(2); // Droite
+        if (peutBouger(e.x, e.y - e.speed * delta)) possibles.push(3);
+        if (peutBouger(e.x, e.y + e.speed * delta)) possibles.push(0);
+        if (peutBouger(e.x - e.speed * delta, e.y)) possibles.push(1);
+        if (peutBouger(e.x + e.speed * delta, e.y)) possibles.push(2); 
 
-        // 2️⃣ Détection face au mur (avec delta)
+        // Détection face au mur (avec delta)
         let nextX = e.x;
         let nextY = e.y;
         if (e.dir === 1) nextX -= e.speed * delta;
@@ -407,10 +404,10 @@ function updateEnemies(delta) {
         if (e.dir === 0) nextY += e.speed * delta;
         let faceAuMur = !peutBouger(nextX, nextY);
 
-        // 3️⃣ Vérifie si sur une case (intersection)
+        // Vérifie si sur une case
         let surUneCase = (Math.abs(e.x % taille) < e.speed && Math.abs(e.y % taille) < e.speed);
 
-        // 4️⃣ Changement de direction
+        // Changement de direction
         if (faceAuMur || (surUneCase && possibles.length > 2)) {
             let nouvellesOptions = possibles;
 
@@ -431,7 +428,7 @@ function updateEnemies(delta) {
             }
         }
 
-        // 5️⃣ Application du mouvement
+        // Application du mouvement
         if (peutBouger(nextX, nextY)) {
             e.x = nextX;
             e.y = nextY;
@@ -440,7 +437,7 @@ function updateEnemies(delta) {
             e.dir = possibles[Math.floor(Math.random() * possibles.length)];
         }
 
-        // 6️⃣ Animation
+        // Animation
         e.frame += 0.1;
         if (e.frame >= 4) e.frame = 0;
     }
@@ -457,7 +454,7 @@ function afficher() {
         for (let c = 0; c < colonne; c++) {
 
             if (grid[l][c] === 1) {
-                // --- C'EST UN MUR : On dessine l'herbe ---
+                // Si mur : on affiche l'herbe
                 if (decorImg.complete) {
                     ctx.drawImage(
                         decorImg,
@@ -470,7 +467,7 @@ function afficher() {
                     ctx.fillRect(c * taille, l * taille, taille, taille);
                 }
             } else {
-                // --- C'EST LE CHEMIN : On dessine un rectangle beige clair ---
+                // Si chemain : on affiche le beige
                 ctx.fillStyle = "#F5F5DC";
                 ctx.fillRect(c * taille, l * taille, taille, taille);
             }
@@ -478,7 +475,7 @@ function afficher() {
 
     }
 
-    // --- DESSIN DU CHAPEAU SUR LE CHEMIN ---
+    // DESSIN DU CHAPEAU SUR LE CHEMIN
     if (hatImg.complete) {
         ctx.drawImage(
             hatImg,
@@ -517,19 +514,19 @@ function afficher() {
         }
     }
 
-    // --- 3. AJOUT DU MODE NOIR (À insérer ici) ---
+    // AJOUT DU MODE NOIR
     // On ne l'affiche que si on est en train de jouer
     if (gameState === "playing") {
         ctx.save();
 
-        // Calcul du centre du joueur (puisqu'il bouge en pixels ici)
+        // Calcul du centre du joueur
         let xLumiere = player.x + taille / 2;
         let yLumiere = player.y + taille / 2;
 
         // On dessine le noir
         ctx.fillStyle = "black";
 
-        // Technique du "rect inverse" pour percer le trou
+        // Pour percer le trou
         ctx.beginPath();
         ctx.rect(0, 0, c.width, c.height);
         ctx.arc(xLumiere, yLumiere, rayonVision, 0, Math.PI * 2, true);
@@ -539,16 +536,19 @@ function afficher() {
     }
 }
 
+// BOUCLE DE JEU
 function boucle(timestamp) {
+    // Calcul du delta (fluidité)
     let delta = (timestamp - lastTime) / 16.666;
     lastTime = timestamp;
 
     update(delta);
     updateEnemies(delta);
-    afficher(); // ⬅️ Toujours afficher, même si overlay visible
+    afficher();
 
     requestAnimationFrame(boucle);
 }
 
+// Lancement
 init();
 requestAnimationFrame(boucle);
