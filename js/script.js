@@ -3,7 +3,7 @@ const c = document.querySelector("#Canva-jeu")
 const ctx = c.getContext('2d');
 
 // Etat du jeu (menu, en cours, gagné, perdu)
-let gameState = "menu"; 
+let gameState = "menu";
 
 // Récupération des éléments HTML (menus, boutons, overlay)
 const overlay = document.getElementById("overlay");
@@ -14,6 +14,11 @@ const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
 const continueBtn = document.getElementById("continueBtn");
 
+// Musique
+const bgMusic = new Audio("musique/musique.mp3");
+bgMusic.loop = true; // La musique recommence à la fin
+bgMusic.volume = 0.3; // Volume à 30%
+
 // Détection si l'utilisateur est sur mobile
 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
@@ -22,6 +27,10 @@ const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 startBtn.addEventListener("click", () => {
     menu.style.display = "none";
     overlay.style.display = "none";
+
+    // --- AJOUT MUSIQUE ---
+    bgMusic.play();
+
     if (isMobile) joystick.style.display = "block"; // Affiche joystick mobile
     gameState = "playing";
     init(); // Lance une nouvelle partie
@@ -31,6 +40,10 @@ startBtn.addEventListener("click", () => {
 restartBtn.addEventListener("click", () => {
     endScreen.style.display = "none";
     overlay.style.display = "none";
+
+    // --- RELANCER LA MUSIQUE ---
+    bgMusic.play().catch(error => console.log(error));
+
     if (isMobile) joystick.style.display = "block";
     gameState = "playing";
     init();
@@ -89,7 +102,7 @@ let player = {
     y: 0,
     dir: 0,
     frame: 0,
-    speed: 2 
+    speed: 2
 };
 
 
@@ -358,6 +371,8 @@ function update(delta) {
     for (let e of enemies) {
         if (collisionRect(player, e)) {
             gameState = "lose";
+            bgMusic.pause(); // On arrête la musique
+            bgMusic.currentTime = 0; // On remet au début pour la prochaine fois
             overlay.style.display = "flex";
             endScreen.style.display = "block";
             endMessage.textContent = "Vous avez perdu !";
@@ -373,6 +388,8 @@ function update(delta) {
     let hat = { x: hatPos.c * taille, y: hatPos.l * taille };
     if (collisionRect(player, hat)) {
         gameState = "win";
+        bgMusic.pause(); // On arrête la musique
+        bgMusic.currentTime = 0; // On remet au début pour la prochaine fois
         overlay.style.display = "flex";
         endScreen.style.display = "block";
         endMessage.textContent = "Vous avez gagné !";
@@ -393,7 +410,7 @@ function updateEnemies(delta) {
         if (peutBouger(e.x, e.y - e.speed * delta)) possibles.push(3);
         if (peutBouger(e.x, e.y + e.speed * delta)) possibles.push(0);
         if (peutBouger(e.x - e.speed * delta, e.y)) possibles.push(1);
-        if (peutBouger(e.x + e.speed * delta, e.y)) possibles.push(2); 
+        if (peutBouger(e.x + e.speed * delta, e.y)) possibles.push(2);
 
         // Détection face au mur (avec delta)
         let nextX = e.x;
