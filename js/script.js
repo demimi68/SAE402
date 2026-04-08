@@ -268,7 +268,7 @@ function init() {
     }
 
     // tirer aléatoirement des cases sans répétition
-    let nbEnemies = 3;
+    let nbEnemies = 4;
     for (let i = 0; i < nbEnemies; i++) {
         let index = Math.floor(Math.random() * available.length);
         let cell = available.splice(index, 1)[0]; // retire la case de la liste
