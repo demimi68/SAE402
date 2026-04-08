@@ -5,10 +5,12 @@ body {
     overflow: hidden;
     font-family: 'Press Start 2P', cursive;
     color: #fff;
+    background-color: #000;
 }
 
 canvas {
     display: block;
+    justify-content: center;
 }
 
 /* ===== Overlay pour menu et écran de fin ===== */
@@ -33,7 +35,7 @@ canvas {
 }
 
 h1 {
-    font-size: 2em;
+    font-size: 28px;
     margin-bottom: 20px;
     color: #f5a623;
     text-shadow: 2px 2px 5px #000;
