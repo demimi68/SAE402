@@ -14,6 +14,7 @@ const restartBtn = document.getElementById("restartBtn");
 startBtn.addEventListener("click", () => {
     menu.style.display = "none";
     overlay.style.display = "none";
+    joystick.style.display = "block";
     gameState = "playing";
     init();
 });
@@ -21,6 +22,7 @@ startBtn.addEventListener("click", () => {
 restartBtn.addEventListener("click", () => {
     endScreen.style.display = "none";
     overlay.style.display = "none";
+    joystick.style.display = "block";
     gameState = "playing";
     init();
 });
@@ -90,16 +92,17 @@ let joystickY = 0;
 let maxRadius = 50; // rayon max du stick
 
 function updateJoystick(dx, dy) {
-    // limite le stick à maxRadius
     let dist = Math.hypot(dx, dy);
     if (dist > maxRadius) {
         dx = (dx / dist) * maxRadius;
         dy = (dy / dist) * maxRadius;
     }
-    stick.style.left = `${30 + dx}px`;
-    stick.style.top = `${30 + dy}px`;
 
-    // normaliser pour movement
+    // Utilise 50% (le centre) + le décalage dx/dy
+    // On divise par le rayon pour que le mouvement soit proportionnel
+    stick.style.left = `calc(50% + ${dx}px)`;
+    stick.style.top = `calc(50% + ${dy}px)`;
+
     joystickX = dx / maxRadius;
     joystickY = dy / maxRadius;
 }
@@ -121,7 +124,11 @@ joystick.addEventListener("touchmove", e => {
 
 joystick.addEventListener("touchend", e => {
     joystickActive = false;
-    updateJoystick(0, 0); // recentre le stick
+    updateJoystick(0, 0); // Recentrer le stick visuellement
+    
+    // IMPORTANT : Forcer l'arrêt du mouvement
+    joystickX = 0;
+    joystickY = 0;
 });
 
 // --- Génération labyrinthe multi-chemins ---
@@ -344,6 +351,7 @@ function update(delta) {
             overlay.style.display = "flex";
             endScreen.style.display = "block";
             endMessage.textContent = "Vous avez perdu !";
+            joystick.style.display = "none";
             return;
         }
     }
@@ -355,6 +363,7 @@ function update(delta) {
         overlay.style.display = "flex";
         endScreen.style.display = "block";
         endMessage.textContent = "Vous avez gagné !";
+        joystick.style.display = "none";
         return;
     }
 }

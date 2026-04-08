@@ -24,7 +24,7 @@ canvas {
     justify-content: center;
     align-items: center;
     z-index: 10;
-    backdrop-filter: blur(4px); /* flou derrière */
+    backdrop-filter: blur(4px); 
     transition: opacity 0.3s;
 }
 
@@ -68,6 +68,7 @@ button:hover {
 
 /* ===== Joystick tactile ===== */
 #joystick {
+    display: none; /* CACHÉ par défaut au chargement */
     position: fixed;
     bottom: 40px;
     left: 50%;
@@ -78,10 +79,12 @@ button:hover {
     border: 3px solid #f5a623;
     border-radius: 50%;
     z-index: 1000;
-    display: flex;
+    /* On utilise flex uniquement quand le JS passera le display en 'flex' ou 'block' */
     justify-content: center;
     align-items: center;
     box-shadow: 0 0 20px rgba(245,166,35,0.4);
+    touch-action: none; /* Empêche le défilement de la page quand on touche le pad */
+    user-select: none;  /* Empêche de sélectionner le rond comme du texte */
 }
 
 #stick {
@@ -91,5 +94,10 @@ button:hover {
     background: rgba(245,166,35,0.7);
     border-radius: 50%;
     box-shadow: inset 0 0 8px rgba(0,0,0,0.3);
-    transition: all 0.1s;
+    pointer-events: none;
+
+    /* AJOUTE CES LIGNES ICI : */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); /* C'est ça qui le remet au centre ! */
 }
