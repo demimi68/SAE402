@@ -2,7 +2,8 @@
 body {
     margin: 0;
     overflow: hidden;
-    font-family: 'Press Start 2P', cursive;
+    font-family: "Jersey 10", sans-serif;
+    letter-spacing: 2px; /* Donne de l'air aux lettres */
     color: #fff;
     background-color: #000;
     
@@ -58,6 +59,8 @@ button {
     font-size: 1em;
     font-weight: bold;
     color: #fff;
+    font-family: "Jersey 10", sans-serif;
+    letter-spacing: 2px; /* Donne de l'air aux lettres */
     background: linear-gradient(145deg, #f5a623, #f56a23);
     border: none;
     border-radius: 12px;

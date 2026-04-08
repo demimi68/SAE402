@@ -10,6 +10,7 @@ const endScreen = document.getElementById("endScreen");
 const endMessage = document.getElementById("endMessage");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
+const continueBtn = document.getElementById("continueBtn");
 
 // Détecte si l'appareil est tactile (smartphone/tablette)
 const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -230,8 +231,8 @@ function init() {
         c.height = window.innerHeight;
     } else {
         // Sur ordi : On fixe une taille "boîte" (ex: format portrait type GameBoy)
-        c.width = 600; 
-        c.height = 800; 
+        c.width = 600;
+        c.height = 800;
     }
 
     grid = generateLaby(colonne, ligne);
@@ -363,6 +364,9 @@ function update(delta) {
             overlay.style.display = "flex";
             endScreen.style.display = "block";
             endMessage.textContent = "Vous avez perdu !";
+            // GESTION BOUTONS
+            restartBtn.style.display = "inline-block"; // Montre rejouer
+            continueBtn.style.display = "none";         // Cache continuer
             joystick.style.display = "none";
             return;
         }
@@ -375,6 +379,9 @@ function update(delta) {
         overlay.style.display = "flex";
         endScreen.style.display = "block";
         endMessage.textContent = "Vous avez gagné !";
+        // GESTION BOUTONS
+        restartBtn.style.display = "none";          // Cache rejouer
+        continueBtn.style.display = "inline-block"; // Montre continuer
         joystick.style.display = "none";
         return;
     }
