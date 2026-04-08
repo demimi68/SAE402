@@ -11,10 +11,13 @@ const endMessage = document.getElementById("endMessage");
 const startBtn = document.getElementById("startBtn");
 const restartBtn = document.getElementById("restartBtn");
 
+// Détecte si l'appareil est tactile (smartphone/tablette)
+const isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
 startBtn.addEventListener("click", () => {
     menu.style.display = "none";
     overlay.style.display = "none";
-    joystick.style.display = "block";
+    if (isMobile) joystick.style.display = "block";
     gameState = "playing";
     init();
 });
@@ -22,7 +25,7 @@ startBtn.addEventListener("click", () => {
 restartBtn.addEventListener("click", () => {
     endScreen.style.display = "none";
     overlay.style.display = "none";
-    joystick.style.display = "block";
+    if (isMobile) joystick.style.display = "block";
     gameState = "playing";
     init();
 });
@@ -125,7 +128,7 @@ joystick.addEventListener("touchmove", e => {
 joystick.addEventListener("touchend", e => {
     joystickActive = false;
     updateJoystick(0, 0); // Recentrer le stick visuellement
-    
+
     // IMPORTANT : Forcer l'arrêt du mouvement
     joystickX = 0;
     joystickY = 0;
@@ -502,14 +505,14 @@ function afficher() {
     // On ne l'affiche que si on est en train de jouer
     if (gameState === "playing") {
         ctx.save();
-        
+
         // Calcul du centre du joueur (puisqu'il bouge en pixels ici)
         let xLumiere = player.x + taille / 2;
         let yLumiere = player.y + taille / 2;
 
         // On dessine le noir
         ctx.fillStyle = "black";
-        
+
         // Technique du "rect inverse" pour percer le trou
         ctx.beginPath();
         ctx.rect(0, 0, c.width, c.height);
