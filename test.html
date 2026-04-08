@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Labyrinthe multi-chemins</title>
 <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; background: #000; } /* Fond noir pour l'immersion */
     canvas { display: block; background: #eee; }
 </style>
 </head>
@@ -23,6 +23,7 @@ let ligne = 23;
 let grid = [];
 
 let taille; // taille des cases
+let rayonVision = 150; // Rayon du cercle de lumière
 
 // Position du joueur
 let player = { x: 1, y: 1 };
@@ -85,18 +86,46 @@ function init() {
 
 // --- Affichage labyrinthe et joueur ---
 function afficher() {
+    // 1. On dessine tout normalement (Labyrinthe + Joueur)
     ctx.clearRect(0, 0, c.width, c.height);
 
     for (let l = 0; l < ligne; l++) {
-        for (let c = 0; c < colonne; c++) {
-            ctx.fillStyle = grid[l][c] === 1 ? "#000" : "#eee";
-            ctx.fillRect(c * taille, l * taille, taille, taille);
+        for (let c_idx = 0; c_idx < colonne; c_idx++) {
+            ctx.fillStyle = grid[l][c_idx] === 1 ? "#000" : "#eee";
+            ctx.fillRect(c_idx * taille, l * taille, taille, taille);
         }
     }
 
     // Dessiner le joueur
     ctx.fillStyle = "red";
     ctx.fillRect(player.x * taille, player.y * taille, taille, taille);
+
+    // --- 2. AJOUT DE L'OBSCURITÉ (LE MASQUE) ---
+    // On crée un calque noir par-dessus tout
+    ctx.save();
+    
+    // On définit le centre de la lumière sur le joueur
+    let xLumiere = player.x * taille + taille / 2;
+    let yLumiere = player.y * taille + taille / 2;
+
+    // Création d'un canvas temporaire ou utilisation de destination-out
+    // C'est la méthode la plus propre pour "trouer" le noir :
+    ctx.fillStyle = "black";
+    
+    // On dessine le rectangle noir sur tout l'écran
+    // Mais on utilise globalCompositeOperation pour "gommer" le cercle
+    
+    // D'abord on dessine un grand rectangle noir
+    ctx.globalCompositeOperation = 'source-over'; // Mode normal
+    
+    // On dessine l'obscurité totale autour du cercle
+    ctx.beginPath();
+    ctx.rect(0, 0, c.width, c.height);
+    // On dessine le cercle à l'envers (sens anti-horaire) pour soustraire la forme
+    ctx.arc(xLumiere, yLumiere, rayonVision, 0, Math.PI * 2, true);
+    ctx.fill();
+
+    ctx.restore();
 }
 
 // --- Déplacements ---
